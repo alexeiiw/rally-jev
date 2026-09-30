@@ -6,6 +6,14 @@ cd "$ROOT"
 
 mkdir -p bootstrap/cache storage/app/data/catalog storage/app/data/races storage/app/data/locks \
   storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs
+
+if ! command -v composer >/dev/null 2>&1; then
+  echo "Composer was not included in the base image; installing it from the official installer."
+  php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
+  php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+  rm -f /tmp/composer-setup.php
+fi
+
 composer install --no-interaction --prefer-dist
 
 if [[ ! -f .env ]]; then

@@ -18,6 +18,16 @@ La preparación ejecuta también `node --check public/js/rally.js` y `php artisa
 
 También puedes ejecutar `bash scripts/start.sh`.
 
+## Instalación manual de dependencias
+
+En un Codespace normal (no Recovery), el setup de primera creación es:
+
+```bash
+bash .devcontainer/setup.sh
+```
+
+Este script instala Composer si no está disponible, instala dependencias PHP, prepara `.env` sin reemplazarlo, inicializa los JSON faltantes y corre las comprobaciones.
+
 ## Desarrollo local con Docker
 
 ```bash
