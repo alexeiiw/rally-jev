@@ -2,6 +2,7 @@
 
 return [
     'jev' => [
+        // Keep mock until official Jev access and documentation are available.
         'driver' => env('JEV_DRIVER', 'mock'),
         'api_key' => env('JEV_API_KEY'),
     ],

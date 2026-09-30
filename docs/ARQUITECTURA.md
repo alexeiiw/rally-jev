@@ -1,5 +1,7 @@
 # JEV Rally — arquitectura v1
 
+**Versión del proyecto: 0.1.0.** Jev real está pendiente de acceso y documentación oficial; el proveedor activo para desarrollo es `MockJevService`.
+
 ## Decisiones
 
 - Laravel 11/12, PHP 8.2+ y una aplicación web servida por Laravel en GitHub Codespaces.
@@ -8,6 +10,7 @@
 - Sin base de datos: catálogos y carreras se guardan en `storage/app/data/` como JSON y JSONL.
 - El estado persistido del servidor es la verdad oficial; JavaScript dibuja y anima, nunca decide resultados.
 - El proveedor inicial es `MockJevService`; las acciones son discretas y el proveedor real deberá implementarse únicamente después de verificar documentación oficial vigente.
+- Estado de Jev: en espera de acceso y documentación oficial para evaluar cómo interactuar con el servicio e integrar su decisión estratégica. `JevService` es solo un punto de extensión y todavía no llama a una API real.
 - Los ticks de simulación avanzan cinco segundos simulados y el navegador los solicita mediante polling.
 - La semilla, nombre/versión del generador RNG y estado del generador de cada carrera se conservan para que la variación del motor sea reproducible.
 - El Codespace contiene las partidas. Si se elimina el Codespace, se eliminan sus archivos locales de datos; recrear uno desde Git comienza con catálogos base vacíos de partidas.

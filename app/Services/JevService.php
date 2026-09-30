@@ -6,8 +6,9 @@ use App\Contracts\DecisionProvider;
 use RuntimeException;
 
 /**
- * Reserved for the official Jev integration. No endpoint or wire format is assumed here.
- * Enable it only after the provider's current official documentation has been verified.
+ * Placeholder for a future official Jev integration.
+ * The project is waiting for access and current official documentation; no endpoint,
+ * authentication scheme, or wire format is assumed until those are available.
  */
 class JevService implements DecisionProvider
 {

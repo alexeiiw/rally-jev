@@ -1,6 +1,14 @@
 # JEV Rally
 
+**Versión actual: 0.1.0 — prototipo funcional.**
+
 Juego web de rally con decisiones estratégicas, simulación del lado servidor y persistencia JSON local. La edición inicial usa Mock Jev y no requiere base de datos.
+
+## Estado de integración Jev
+
+Estamos **a la espera del acceso y de la documentación oficial vigente del servicio Jev** para estudiar cómo funciona e integrar su toma de decisiones estratégicas. La integración externa aún no está implementada ni configurada; por ahora el juego utiliza `MockJevService`, una serie de reglas internas de prueba. El mock puede tomar decisiones arriesgadas y no garantiza victorias.
+
+Cuando esté disponible el servicio Jev, se revisarán sus capacidades, autenticación, formato de entrada/salida, errores y límites antes de implementar el proveedor real. No se deben inventar endpoints ni poner API keys en el frontend o en GitHub.
 
 ## Codespaces
 

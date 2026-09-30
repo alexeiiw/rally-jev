@@ -1,5 +1,12 @@
 # Continuidad del desarrollo
 
+## Versión y estado del proveedor Jev
+
+- Versión actual documentada: **0.1.0** (prototipo funcional).
+- Jev externo: **pendiente**. Estamos a la espera de acceso y documentación oficial vigente para analizar cómo funciona e implementar la integración.
+- Mientras tanto se usa `MockJevService`, un conjunto de reglas internas para probar decisiones y consecuencias; no es el servicio Jev real.
+- Siguiente paso Jev cuando tengamos acceso: verificar documentación/capacidades y autenticación, acordar el contrato de entrada/salida, implementar el adaptador y probar errores/fallback sin exponer secretos.
+
 ## Estado
 
 - Ciclo completado: implementación inicial Laravel + persistencia local JSON + interfaz Canvas.
