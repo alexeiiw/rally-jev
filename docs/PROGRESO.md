@@ -11,9 +11,9 @@
 - Pruebas unitarias iniciales para reproducción determinista, decisiones y resultado final.
 - Frontend: mapa Canvas esquemático, telemetría, decisión, clasificación, eventos, controles e historial.
 - Panel de resultado derivado de carrera: tiempo, posición, daño, decisiones, ataques e incidentes.
-- Setup de Codespaces crea `.env`, instala dependencias e inicializa archivos únicamente si faltan.
-- Verificación pendiente: el entorno de autoría no dispone de PHP, Composer ni Node y Docker Desktop no tiene daemon activo. `.devcontainer/setup.sh` ejecutará la validación JS y las pruebas PHPUnit al crear el Codespace.
-- Codespaces inició en Recovery debido a error de contenedor; se cambió a la etiqueta de imagen PHP documentada `8.3-bookworm`, se actualizó Node Feature a v2 y setup instala Composer como fallback.
+- `install.sh` crea `.env` si falta, instala dependencias PHP e inicializa archivos JSON únicamente si faltan.
+- Verificación pendiente: el entorno de autoría no dispone de PHP ni Composer. `install.sh` instala dependencias y ejecuta PHPUnit dentro de Codespaces.
+- Codespaces inició en Recovery; se simplificó `.devcontainer` a la imagen oficial PHP 8.3 sin Features adicionales, y ahora ejecuta directamente `bash install.sh`. El proyecto no requiere Node.
 - Se agregó `install.sh` en la raíz como comando manual único de instalación/bootstrap para Codespaces.
 
 ## Próximo ciclo sugerido

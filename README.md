@@ -5,7 +5,7 @@ Juego web de rally con decisiones estratégicas, simulación del lado servidor y
 ## Codespaces
 
 1. Publica este repositorio en GitHub y crea un Codespace.
-2. El contenedor instala PHP 8.3, Composer y Node, después ejecuta `.devcontainer/setup.sh`.
+2. Codespaces prepara PHP 8.3 y Composer, después ejecuta `bash install.sh` automáticamente.
 3. En el terminal de Codespaces inicia el servidor:
 
    ```bash
@@ -14,7 +14,7 @@ Juego web de rally con decisiones estratégicas, simulación del lado servidor y
 
 4. Codespaces reenvía y abre el puerto 8000 automáticamente; también puedes acceder desde la pestaña **Ports**.
 
-La preparación ejecuta también `node --check public/js/rally.js` y `php artisan test`.
+La preparación ejecuta las pruebas PHP. El frontend usa JavaScript del navegador y no necesita instalar Node ni paquetes npm.
 
 También puedes ejecutar `bash scripts/start.sh`.
 
@@ -27,14 +27,6 @@ bash install.sh
 ```
 
 Este script instala Composer si no está disponible, instala dependencias PHP, prepara `.env` sin reemplazarlo, inicializa los JSON faltantes y corre las comprobaciones. Si el Codespace está en Recovery Mode, primero reconstruye el contenedor desde la paleta de comandos de VS Code: `Codespaces: Rebuild Container`.
-
-## Desarrollo local con Docker
-
-```bash
-docker compose up --build
-```
-
-Luego abre `http://localhost:8000`.
 
 ## Datos
 

@@ -1,10 +1,7 @@
 {
   "name": "JEV Rally",
   "image": "mcr.microsoft.com/devcontainers/php:8.3-bookworm",
-  "features": {
-    "ghcr.io/devcontainers/features/node:2": { "version": "22" }
-  },
-  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postCreateCommand": "bash install.sh",
   "forwardPorts": [8000],
   "portsAttributes": {
     "8000": { "label": "JEV Rally", "onAutoForward": "openBrowser" }

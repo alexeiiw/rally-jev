@@ -17,8 +17,10 @@ mkdir -p bootstrap/cache storage/app/data/catalog storage/app/data/races storage
 if ! command -v composer >/dev/null 2>&1; then
   echo "Installing Composer..."
   php -r "copy('https://getcomposer.org/installer', '/tmp/composer-setup.php');"
-  php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+  mkdir -p "$HOME/.local/bin"
+  php /tmp/composer-setup.php --install-dir="$HOME/.local/bin" --filename=composer
   rm -f /tmp/composer-setup.php
+  export PATH="$HOME/.local/bin:$PATH"
 fi
 
 if [[ ! -f .env ]]; then
@@ -34,11 +36,6 @@ fi
 
 echo "Initializing JSON catalogs..."
 php artisan rally:setup
-
-if command -v node >/dev/null 2>&1; then
-  echo "Checking JavaScript..."
-  node --check public/js/rally.js
-fi
 
 if [[ -f vendor/bin/phpunit ]]; then
   echo "Running tests..."
