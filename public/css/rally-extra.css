@@ -4,7 +4,24 @@
 .selection-strip select{min-width:125px;padding:5px 24px 5px 8px;background:#20251e;border:1px solid #343c2e;color:#d2d9c8;font:9px "DM Mono",monospace;outline:none}
 .selection-strip select:focus{border-color:#87986d}
 .selection-strip>span{margin-left:auto;color:#626b5b;font:7px "DM Mono",monospace;letter-spacing:.8px}
-@media(max-width:700px){.selection-strip{flex-wrap:wrap}.selection-strip label{flex:1;min-width:145px;justify-content:space-between}.selection-strip select{flex:1;min-width:90px}.selection-strip>span{display:none}}
+.competition-strip{flex-wrap:wrap}
+.competitor-select{display:flex;align-items:center;gap:8px;margin:0;padding:5px 8px;border:1px solid #30382c;min-width:0}
+.competitor-select legend{padding:0 5px;color:#9fac8c;font:7px "DM Mono",monospace;letter-spacing:.7px}
+.competitor-select label{gap:5px}
+.competitor-select select{min-width:90px;max-width:175px}
+.opponent{background:#66d9ff;box-shadow:0 0 7px #66d9ff80}
+.swatch-2{background:#66d9ff!important}
+.class-row{display:grid;grid-template-columns:minmax(0,1fr) auto;min-height:50px;height:auto;padding:7px 0;column-gap:7px}
+.class-row:first-child .class-time{color:var(--accent)}
+.class-meta{grid-column:1/-1;color:#737d6b;font:7px "DM Mono",monospace;letter-spacing:.3px;padding:2px 0 0 52px}
+.class-row.abandoned .class-time{color:var(--warn)}
+.result-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.result-driver{display:flex;flex-direction:column;gap:5px;padding:11px;border:1px solid #323a2d;background:#171b16}
+.result-driver strong{font:700 16px "Barlow Condensed",sans-serif;color:var(--accent)}
+.result-driver>span{font:8px "DM Mono",monospace;color:#929b88}
+.result-driver>b{font:14px "DM Mono",monospace;color:#e3e9d9;font-weight:400}
+.version-tag{margin-left:7px;color:#a9b495;font:7px "DM Mono",monospace;letter-spacing:.5px;vertical-align:middle}
+@media(max-width:700px){.selection-strip{flex-wrap:wrap}.selection-strip>label{flex:1;min-width:145px;justify-content:space-between}.selection-strip select{flex:1;min-width:90px}.selection-strip>span{display:none}.competitor-select{flex:1;flex-wrap:wrap}.competitor-select label{flex:1;justify-content:space-between}.competitor-select select{max-width:none}}
 .result-panel{margin-top:14px;padding:15px 18px;border-color:#586847;background:linear-gradient(100deg,#1c2418,#171b16 70%)}
 .result-panel[hidden]{display:none}
 .result-heading{display:flex;align-items:center;justify-content:space-between}

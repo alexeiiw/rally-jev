@@ -13,15 +13,23 @@ class MockJevService implements DecisionProvider
         $sector = $context['sector']['number'];
         $state = $context['state'];
         $driver = $context['driver'] ?? [];
-        $risk = $context['sector']['risk'] + ($context['weather'] === 'lluvia' ? 12 : 0) + (100 - $state['tires']) * 0.35;
+        $vehicle = $context['vehicle'] ?? [];
+        $experience = $driver['experience'] ?? 50;
+        $reaction = $driver['reaction'] ?? 50;
+        $risk = $context['sector']['risk'] + ($context['weather'] === 'lluvia' ? 12 : 0)
+            + (100 - $state['tires']) * 0.35
+            + max(0, 65 - $reaction) * 0.12
+            - max(0, $experience - 50) * 0.1
+            - max(0, ($vehicle['braking'] ?? 50) - 50) * 0.08
+            - max(0, ($driver['risk_tolerance'] ?? 50) - 50) * 0.16;
 
         if ($state['tires'] < 28 || $state['brakes'] < 25 || $state['engine'] < 24) {
             $action = 'CONSERVAR';
         } elseif ($risk > 72 || (($driver['risk_tolerance'] ?? 50) < 35 && $risk > 55)) {
             $action = 'FRENAR_ANTES';
-        } elseif (($driver['aggressiveness'] ?? 50) > 80 && $risk < 48 && $sector % 2 === 0) {
+        } elseif (($driver['aggressiveness'] ?? 50) > 70 && $risk < 62 && $sector % 2 === 0) {
             $action = 'ATACAR';
-        } elseif (($driver['conservation'] ?? 50) > 75 && $state['tires'] < 55) {
+        } elseif (($driver['conservation'] ?? 50) > 70 && $state['tires'] < 75) {
             $action = 'CONSERVAR';
         } else {
             $action = match ($sector % 4) {
@@ -40,7 +48,7 @@ class MockJevService implements DecisionProvider
             'provider' => 'mock',
             'selected_action' => $action,
             'probabilities' => null,
-            'raw_response' => ['mode' => 'deterministic-demo', 'sector' => $sector],
+            'raw_response' => ['mode' => 'deterministic-demo', 'sector' => $sector, 'driver_profile' => $driver['age_group'] ?? 'Personalizado'],
         ];
     }
 }

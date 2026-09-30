@@ -32,17 +32,27 @@ class JsonStore
             }
         }
 
-        $this->withLock('setup', function (): void {
-            foreach ($this->initialCatalogs() as $name => $data) {
-                $path = $this->root.'/catalog/'.$name.'.json';
-                if (! file_exists($path)) {
-                    $this->writeAtomically($path, $data);
+        $this->withIndexLock(function (): void {
+            $this->withLock('setup', function (): void {
+                foreach ($this->initialCatalogs() as $name => $defaults) {
+                    $path = $this->root.'/catalog/'.$name.'.json';
+                    if (! file_exists($path)) {
+                        $this->writeAtomically($path, $defaults);
+                        continue;
+                    }
+
+                    $existing = $this->read($path);
+                    $existingIds = array_column($existing, 'id');
+                    $missing = array_values(array_filter($defaults, fn (array $item) => ! in_array($item['id'], $existingIds, true)));
+                    if ($missing !== []) {
+                        $this->writeAtomically($path, [...$existing, ...$missing]);
+                    }
                 }
-            }
-            $index = $this->root.'/races/index.json';
-            if (! file_exists($index)) {
-                $this->writeAtomically($index, []);
-            }
+                $index = $this->root.'/races/index.json';
+                if (! file_exists($index)) {
+                    $this->writeAtomically($index, []);
+                }
+            });
         });
     }
 
@@ -50,7 +60,7 @@ class JsonStore
     {
         $this->ensureInitialized();
 
-        return $this->withLock('index', fn (): array => [
+        return $this->withLock('setup', fn (): array => [
             'drivers' => $this->read($this->root.'/catalog/drivers.json'),
             'vehicles' => $this->read($this->root.'/catalog/vehicles.json'),
             'stages' => $this->read($this->root.'/catalog/stages.json'),
@@ -61,7 +71,7 @@ class JsonStore
     {
         $this->ensureInitialized();
         $indexPath = $this->root.'/races/index.json';
-        $this->withIndexLock(function () use ($indexPath, $race): void {
+        $this->withRaceAndIndexLocks($race['id'], function () use ($indexPath, $race): void {
             $index = $this->read($indexPath);
             foreach ($index as $existing) {
                 if ($existing['id'] === $race['id']) {
@@ -82,7 +92,7 @@ class JsonStore
             return null;
         }
 
-        return $this->withIndexLock(function () use ($id): ?array {
+        return $this->withRaceAndIndexLocks($id, function () use ($id): ?array {
             $path = $this->racePath($id);
 
             return is_file($path) ? $this->read($path) : null;
@@ -94,17 +104,12 @@ class JsonStore
         if (! $this->validRaceId($id)) {
             return null;
         }
-
-        return $this->withIndexLock(function () use ($id, $callback): ?array {
+        return $this->withRaceAndIndexLocks($id, function () use ($id, $callback): ?array {
             $path = $this->racePath($id);
-            if (! is_file($path)) {
-                return null;
-            }
+            if (! is_file($path)) return null;
             $race = $this->read($path);
             $updated = $callback($race);
-            if ($updated === null) {
-                return null;
-            }
+            if ($updated === null) return null;
 
             $updated['updated_at'] = now()->toISOString();
             $indexPath = $this->root.'/races/index.json';
@@ -115,8 +120,8 @@ class JsonStore
                     break;
                 }
             }
-            $this->writeRace($updated);
             $this->writeAtomically($indexPath, $index);
+            $this->writeRace($updated);
 
             return $updated;
         });
@@ -138,7 +143,7 @@ class JsonStore
             throw new RuntimeException('Invalid race identifier.');
         }
 
-        $this->withIndexLock(function () use ($raceId, $events): void {
+        $this->withRaceAndIndexLocks($raceId, function () use ($raceId, $events): void {
             $path = $this->eventPath($raceId);
             $handle = fopen($path, 'ab');
             if ($handle === false) {
@@ -165,7 +170,7 @@ class JsonStore
         if (! $this->validRaceId($raceId)) {
             throw new RuntimeException('Invalid race identifier.');
         }
-        $this->withIndexLock(function () use ($raceId): void {
+        $this->withRaceAndIndexLocks($raceId, function () use ($raceId): void {
             $path = $this->eventPath($raceId);
             $handle = fopen($path, 'c+');
             if ($handle === false) {
@@ -189,7 +194,7 @@ class JsonStore
         if (! $this->validRaceId($raceId)) {
             return [];
         }
-        return $this->withIndexLock(function () use ($raceId): array {
+        return $this->withRaceAndIndexLocks($raceId, function () use ($raceId): array {
             $path = $this->eventPath($raceId);
             if (! is_file($path)) {
                 return [];
@@ -205,8 +210,24 @@ class JsonStore
 
     private function summary(array $race): array
     {
-        $entry = $race['entries'][0] ?? [];
-        $state = $race['states'][0] ?? [];
+        $classification = $race['result']['classification'] ?? [];
+        $leaderIndex = array_search(1, array_column($race['entries'], 'position'), true);
+        if ($leaderIndex === false) $leaderIndex = 0;
+        $entry = $race['entries'][$leaderIndex] ?? [];
+        $state = $race['states'][$leaderIndex] ?? [];
+        if ($classification === []) {
+            foreach ($race['entries'] ?? [] as $entryIndex => $raceEntry) {
+                $raceState = $race['states'][$entryIndex] ?? [];
+                $classification[] = ['entry_id' => $raceEntry['id'], 'driver_name' => $raceEntry['driver']['name'], 'vehicle_name' => $raceEntry['vehicle']['name'], 'status' => $raceState['status'] ?? 'running', 'position' => $raceEntry['position'] ?? $entryIndex + 1, 'elapsed_seconds' => $raceState['elapsed_seconds'] ?? 0, 'time_display' => $raceState['time_display'] ?? '00:00.00', 'damage' => $raceState['damage'] ?? 0, 'decision_count' => 0, 'attacks' => 0, 'incidents' => 0];
+            }
+        }
+        $winnerName = null;
+        foreach ($classification as $resultEntry) {
+            if (($resultEntry['entry_id'] ?? null) === ($race['result']['winner_entry_id'] ?? null)) {
+                $winnerName = $resultEntry['driver_name'];
+                break;
+            }
+        }
 
         return [
             'id' => $race['id'],
@@ -214,9 +235,11 @@ class JsonStore
             'stage_name' => $race['stage']['name'] ?? 'Etapa',
             'driver_name' => $entry['driver']['name'] ?? 'Piloto',
             'vehicle_name' => $entry['vehicle']['name'] ?? 'Vehículo',
-            'elapsed_seconds' => $state['elapsed_seconds'] ?? 0,
+            'elapsed_seconds' => count($race['states'] ?? []) > 1 ? max(array_column($race['states'], 'elapsed_seconds')) : ($state['elapsed_seconds'] ?? 0),
             'position' => $entry['position'] ?? 1,
             'damage' => $state['damage'] ?? 0,
+            'participant_count' => count($race['entries'] ?? []),
+            'winner_name' => $winnerName,
             'created_at' => $race['created_at'],
             'updated_at' => $race['updated_at'],
         ];
@@ -313,6 +336,11 @@ class JsonStore
         }
     }
 
+    private function withRaceAndIndexLocks(string $raceId, callable $callback): mixed
+    {
+        return $this->withIndexLock(fn () => $this->withLock($raceId, $callback));
+    }
+
     private function initialCatalogs(): array
     {
         $sectors = [
@@ -338,8 +366,16 @@ class JsonStore
         unset($sector);
 
         return [
-            'drivers' => [['id' => 'jev-01', 'name' => 'JEV-01', 'aggressiveness' => 70, 'conservation' => 45, 'risk_tolerance' => 65]],
-            'vehicles' => [['id' => 'rally-x1', 'name' => 'RALLY-X1', 'power' => 320, 'weight_kg' => 1280, 'acceleration' => 78, 'braking' => 72, 'grip' => 74, 'durability' => 80]],
+            'drivers' => [
+                ['id' => 'jev-joven', 'name' => 'JEV JOVEN', 'age_group' => 'Joven', 'experience' => 48, 'reaction' => 88, 'aggressiveness' => 78, 'conservation' => 38, 'risk_tolerance' => 76],
+                ['id' => 'jev-intermedio', 'name' => 'JEV INTERMEDIO', 'age_group' => 'Intermedio', 'experience' => 76, 'reaction' => 78, 'aggressiveness' => 62, 'conservation' => 58, 'risk_tolerance' => 57],
+                ['id' => 'jev-mayor', 'name' => 'JEV MAYOR', 'age_group' => 'Mayor', 'experience' => 91, 'reaction' => 66, 'aggressiveness' => 43, 'conservation' => 82, 'risk_tolerance' => 39],
+            ],
+            'vehicles' => [
+                ['id' => 'rally-x1-bueno', 'name' => 'RALLY-X1 PRO · BUENO', 'class' => 'Bueno', 'power' => 350, 'weight_kg' => 1220, 'acceleration' => 88, 'braking' => 84, 'grip' => 86, 'durability' => 82],
+                ['id' => 'rally-x1-medio', 'name' => 'RALLY-X1 · MEDIO', 'class' => 'Medio', 'power' => 300, 'weight_kg' => 1290, 'acceleration' => 70, 'braking' => 68, 'grip' => 69, 'durability' => 72],
+                ['id' => 'rally-x1-basico', 'name' => 'RALLY-X1 CLUB · BÁSICO', 'class' => 'Básico', 'power' => 250, 'weight_kg' => 1370, 'acceleration' => 55, 'braking' => 53, 'grip' => 52, 'durability' => 60],
+            ],
             'stages' => [['id' => 'sierra-de-la-mina', 'name' => 'Sierra de la Mina', 'distance_m' => $distance, 'distance_km' => round($distance / 1000, 1), 'difficulty' => 'media-alta', 'default_weather' => 'lluvia', 'sectors' => $sectors]],
         ];
     }

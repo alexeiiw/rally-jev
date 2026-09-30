@@ -1,6 +1,6 @@
 {
   "name": "jev/rally",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "type": "project",
   "description": "JEV Rally - a decision-driven rally simulation.",
   "keywords": ["laravel", "rally", "simulation"],

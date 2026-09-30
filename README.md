@@ -1,8 +1,10 @@
 # JEV Rally
 
-**Versión actual: 0.1.0 — prototipo funcional.**
+**Versión actual: 0.3.0 — competencia local robusta de dos participantes con Mock Jev.**
 
 Juego web de rally con decisiones estratégicas, simulación del lado servidor y persistencia JSON local. La edición inicial usa Mock Jev y no requiere base de datos.
+
+Puedes seleccionar dos pilotos distintos, asignar un auto a cada uno y competir en la misma pista. La edad se representa mediante atributos explícitos del perfil (experiencia, reacción, agresividad, conservación y tolerancia al riesgo); no decide por sí sola quién gana. Mock considera el perfil y el vehículo, mientras el motor calcula las consecuencias y la clasificación.
 
 ## Estado de integración Jev
 
@@ -13,18 +15,12 @@ Cuando esté disponible el servicio Jev, se revisarán sus capacidades, autentic
 ## Codespaces
 
 1. Publica este repositorio en GitHub y crea un Codespace.
-2. Codespaces prepara PHP 8.3 y Composer, después ejecuta `bash install.sh` automáticamente.
-3. En el terminal de Codespaces inicia el servidor:
-
-   ```bash
-   php artisan serve --host=0.0.0.0 --port=8000
-   ```
-
-4. Codespaces reenvía y abre el puerto 8000 automáticamente; también puedes acceder desde la pestaña **Ports**.
+2. Codespaces instala dependencias con `bash install.sh` y arranca el servidor automáticamente al crear o reabrir el Codespace.
+3. Abre el puerto 8000 desde la pestaña **Ports**.
 
 La preparación ejecuta las pruebas PHP. El frontend usa JavaScript del navegador y no necesita instalar Node ni paquetes npm.
 
-También puedes ejecutar `bash scripts/start.sh`.
+Para iniciar manualmente el servidor: `bash scripts/start.sh`.
 
 ## Instalación manual de dependencias
 
@@ -37,6 +33,8 @@ bash install.sh
 Este script instala Composer si no está disponible, instala dependencias PHP, prepara `.env` sin reemplazarlo, inicializa los JSON faltantes y corre las comprobaciones. Si el Codespace está en Recovery Mode, primero reconstruye el contenedor desde la paleta de comandos de VS Code: `Codespaces: Rebuild Container`.
 
 ## Datos
+
+La interfaz permite seleccionar dos pilotos distintos y combinar cada uno con cualquiera de los autos del catálogo. Ambos compiten en la misma etapa con estados, RNG, decisiones y consecuencias independientes; la clasificación final se deriva de finalizaciones, tiempos y abandonos registrados.
 
 Los catálogos y las carreras se guardan bajo `storage/app/data/`. Las carreras se escriben en JSON y sus eventos en JSONL. El directorio de partidas está excluido de Git. El contenido vive en el Codespace actual; al eliminar ese Codespace se pierden las partidas y una nueva instancia comienza sin historial.
 

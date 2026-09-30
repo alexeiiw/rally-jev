@@ -88,11 +88,17 @@
       ctx.fillStyle = '#121511'; ctx.font = 'bold 8px "DM Mono", monospace'; ctx.fillText(label, point.x - 2.5, point.y + 3);
     });
 
-    const p = points[Math.min(points.length - 1, Math.round(visualProgress * (points.length - 1)))];
-    ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI * 2); ctx.fillStyle = 'rgba(202,255,112,.13)'; ctx.fill();
-    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(points[Math.min(points.length - 1, Math.round(visualProgress * (points.length - 1)) + 1)].y - p.y, points[Math.min(points.length - 1, Math.round(visualProgress * (points.length - 1)) + 1)].x - p.x));
-    ctx.fillStyle = '#caff70'; ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-6, -5); ctx.lineTo(-4, 0); ctx.lineTo(-6, 5); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#f5f7ef'; ctx.fillRect(-2, -2, 6, 4); ctx.restore();
+    const displayProgress = race ? race.states.map((state) => state.progress / 100) : [visualProgress, visualProgress];
+    displayProgress.forEach((progress, index) => {
+      const pointIndex = Math.min(points.length - 2, Math.round(progress * (points.length - 1)));
+      const p = points[pointIndex];
+      const color = index === 0 ? '#caff70' : '#66d9ff';
+      ctx.beginPath(); ctx.arc(p.x, p.y, 13, 0, Math.PI * 2);
+      ctx.fillStyle = index === 0 ? 'rgba(202,255,112,.13)' : 'rgba(102,217,255,.13)'; ctx.fill();
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(points[pointIndex + 1].y - p.y, points[pointIndex + 1].x - p.x));
+      ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-6, -5); ctx.lineTo(-4, 0); ctx.lineTo(-6, 5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#f5f7ef'; ctx.fillRect(-2, -2, 6, 4); ctx.restore();
+    });
   }
 
   function animate() {
@@ -112,10 +118,15 @@
     race = r;
     stage = r.stage;
     if ($('#stage-select').options.length) $('#stage-select').value = r.stage.id;
-    if ($('#driver-select').options.length) $('#driver-select').value = r.entries[0].driver.id;
-    if ($('#vehicle-select').options.length) $('#vehicle-select').value = r.entries[0].vehicle.id;
-    const state = r.states[0];
-    const entry = r.entries[0];
+    r.entries.forEach((entry, index) => {
+      const suffix = index === 0 ? 'one' : 'two';
+      $(`#driver-${suffix}-select`).value = entry.driver.id;
+      $(`#vehicle-${suffix}-select`).value = entry.vehicle.id;
+    });
+    const activeIndex = r.states.findIndex((entryState) => entryState.status === 'running');
+    const selectedIndex = activeIndex >= 0 ? activeIndex : 0;
+    const state = r.states[selectedIndex];
+    const entry = r.entries[selectedIndex];
     targetProgress = state.progress / 100;
     $('#stage-name').innerHTML = `${escapeHtml(stage.name.split(' ')[0])} <span>${escapeHtml(stage.name.split(' ').slice(1).join(' ').toUpperCase())}</span>`;
     $('#weather-label').innerHTML = `<b class="weather-icon">${stage.default_weather === 'lluvia' ? '☂' : '◌'}</b> ${escapeHtml(stage.default_weather.toUpperCase())}`;
@@ -132,14 +143,13 @@
     $('#speed-bar').style.width = `${Math.min(100, state.speed_kmh / 2.1)}%`;
     const [minutes, seconds] = state.time_display.split(':');
     $('#time-value').innerHTML = `${minutes}:${seconds.slice(0, 2)}<span>.${seconds.slice(3)}</span>`;
-    $('#class-time').textContent = state.time_display;
-    $('#class-gap').textContent = r.status === 'finished' ? 'ETAPA COMPLETADA' : r.status === 'abandoned' ? 'ABANDONO' : 'LÍDER DE ETAPA';
     $('#map-sector').textContent = `SECTOR ${String(state.sector_number).padStart(2, '0')}`;
     $('#sector-type').textContent = `SECTOR ${String(state.sector_number).padStart(2, '0')} · ${state.sector?.type?.toUpperCase() || ''}`;
     $('#curve-name').textContent = state.sector?.critical_curve || '—';
     $('#curve-distance').textContent = Number(state.next_curve_distance).toLocaleString('es');
     $('#curve-risk').textContent = `RIESGO ${state.sector?.risk ?? '—'}`;
     $('#action-chip').textContent = state.current_action.replaceAll('_', ' ');
+    $('#vehicle-name').textContent = `${entry.vehicle.name} · ${entry.driver.name}`;
     setBar('#tires-bar', state.tires); $('#tires-label').textContent = `${Math.round(state.tires)}%`;
     setBar('#engine-bar', state.engine); $('#engine-label').textContent = `${Math.round(state.engine)}%`;
     setBar('#brakes-bar', state.brakes); $('#brakes-label').textContent = `${Math.round(state.brakes)}%`;
@@ -148,14 +158,15 @@
     $('#decision-icon').textContent = state.current_action === 'ATACAR' ? '↗' : state.current_action === 'CONSERVAR' ? '⌁' : state.current_action === 'FRENAR_ANTES' ? '↓' : state.current_action === 'TOMAR_INTERIOR' ? '↰' : state.current_action === 'TOMAR_EXTERIOR' ? '↱' : '→';
     $('#decision-reason').textContent = state.decision_reason || 'Estrategia de carrera';
     $('#decision-sector').textContent = `S${String(state.sector_number).padStart(2, '0')}`;
-    renderOptions(r.decisions);
+    renderOptions(r.decisions.filter((decision) => decision.entry_id === entry.id));
+    renderClassification(r);
     renderEvents(r.events);
-    $('#race-status').textContent = statusLabel(r.status);
-    $('#session-label').textContent = `${entry.driver.name} · ${r.status === 'running' ? 'EN VIVO' : statusLabel(r.status)}`;
+    $('#race-status').textContent = r.result?.winner_entry_id ? `${r.result.classification.find((item) => item.entry_id === r.result.winner_entry_id)?.driver_name} GANA` : statusLabel(r.status);
+    $('#session-label').textContent = `DOS PILOTOS · ${r.status === 'running' ? 'EN VIVO' : statusLabel(r.status)}`;
     $('#race-short-id').textContent = r.id.slice(0, 8).toUpperCase();
     $('#start-button').disabled = ['running', 'paused'].includes(r.status);
-    $('#start-button').innerHTML = r.status === 'finished' ? '<span class="button-icon">✓</span> ETAPA COMPLETADA <span class="button-arrow">↗</span>' : r.status === 'abandoned' ? '<span class="button-icon">!</span> CARRERA ABANDONADA <span class="button-arrow">↗</span>' : '<span class="button-icon">▶</span> INICIAR ETAPA <span class="button-arrow">↗</span>';
-    $('#pause-button').disabled = !['running', 'paused'].includes(r.status);
+    $('#start-button').innerHTML = ['finished', 'abandoned'].includes(r.status) ? '<span class="button-icon">↻</span> NUEVA COMPETENCIA <span class="button-arrow">↗</span>' : '<span class="button-icon">▶</span> INICIAR COMPETENCIA <span class="button-arrow">↗</span>';
+    $('#pause-button').disabled = !['running', 'paused', 'created'].includes(r.status);
     $('#pause-button').innerHTML = r.status === 'paused' ? '▶ &nbsp; CONTINUAR' : 'Ⅱ &nbsp; PAUSAR';
     $('#restart-button').disabled = ['running', 'created'].includes(r.status);
     if (r.result) renderFinish(r.result);
@@ -165,12 +176,26 @@
 
   function renderOptions(decisions) {
     const decision = decisions.at(-1);
-    if (!decision) return;
+    if (!decision) {
+      $('#option-list').innerHTML = '<div class="empty-options">Las decisiones del piloto aparecerán aquí.</div>';
+      return;
+    }
     const options = decision.probabilities && Object.keys(decision.probabilities).length
       ? Object.entries(decision.probabilities).map(([name, value]) => ({ name, value: Number(value) }))
       : [{ name: decision.selected_action, value: null }];
     $('#option-list').innerHTML = options.map((item) => `<div class="option-row ${item.name === decision.selected_action ? 'selected' : ''}"><span class="option-name"><i></i>${escapeHtml(item.name.replaceAll('_', ' '))}</span>${item.value === null ? '<span class="option-tag">SELECCIONADA</span>' : `<span class="option-score">${item.value}%</span>`}</div>`).join('');
     $('#decision-sector').textContent = `S${String(decision.sector).padStart(2, '0')} · TICK ${decision.tick}`;
+  }
+
+  function renderClassification(r) {
+    $('#classification-list').innerHTML = r.entries.map((entry, index) => {
+      const state = r.states[index];
+      const finished = state.status === 'finished';
+      const abandoned = state.status === 'abandoned';
+      const time = finished ? state.time_display : abandoned ? `DNF · ${(state.distance_m / 1000).toFixed(2)} KM` : 'EN CARRERA';
+      const vehicleClass = entry.vehicle.class || 'Competición';
+      return `<div class="class-row ${entry.position === 1 ? 'leader' : ''} ${abandoned ? 'abandoned' : ''}"><span class="class-driver"><b>${String(entry.position).padStart(2, '0')}</b><span class="driver-swatch swatch-${index + 1}"></span><strong>${escapeHtml(entry.driver.name)}</strong><em>${escapeHtml(entry.vehicle.name)}</em></span><span class="class-time">${abandoned ? 'DNF' : time}</span><small class="class-meta">${escapeHtml(entry.driver.age_group || '')} · ${escapeHtml(vehicleClass)} · ${Math.round(state.progress)}%${state.current_action ? ` · ${escapeHtml(state.current_action.replaceAll('_', ' '))}` : ''}</small></div>`;
+    }).join('');
   }
 
   function renderEvents(events) {
@@ -179,21 +204,16 @@
       $('#event-list').innerHTML = '<div class="event-empty"><span>—</span> Los eventos de carrera aparecerán aquí.</div>';
       return;
     }
-    $('#event-list').innerHTML = events.slice(-5).reverse().map((event) => `<div class="event-row ${event.type === 'derrape' || event.type === 'golpe' ? 'warning' : ''}"><span class="event-time">T${String(event.tick || 0).padStart(3, '0')}</span><span class="event-symbol">${event.type === 'finish' ? '✓' : event.type === 'abandonment' ? '!' : '⚠'}</span><span class="event-description">${escapeHtml(event.label)}</span><span class="event-sector">S${String(event.sector || 1).padStart(2, '0')}</span>${event.time_lost ? `<span class="event-loss">+${event.time_lost.toFixed(1)}s</span>` : ''}</div>`).join('');
+    $('#event-list').innerHTML = events.slice(-8).reverse().map((event) => `<div class="event-row ${event.type === 'derrape' || event.type === 'golpe' ? 'warning' : ''}"><span class="event-time">T${String(event.tick || 0).padStart(3, '0')}</span><span class="event-symbol">${event.type === 'finish' ? '✓' : event.type === 'abandonment' ? '!' : '⚠'}</span><span class="event-description">${event.driver_name ? `<b>${escapeHtml(event.driver_name)}</b> · ` : ''}${escapeHtml(event.label)}</span><span class="event-sector">S${String(event.sector || 1).padStart(2, '0')}</span>${event.time_lost ? `<span class="event-loss">+${event.time_lost.toFixed(1)}s</span>` : ''}</div>`).join('');
   }
 
   function renderFinish(result) {
     $('#result-panel').hidden = false;
-    $('#result-title').textContent = result.status === 'finished' ? 'ETAPA COMPLETADA' : 'ABANDONO';
-    $('#result-time').textContent = result.time_display;
-    $('#result-position').textContent = result.status === 'finished' ? `P${String(result.position).padStart(2, '0')}` : 'DNF';
-    $('#result-damage').textContent = `${Math.round(result.damage)}%`;
-    $('#result-decisions').textContent = result.decision_count;
-    $('#result-attacks').textContent = result.attacks;
-    $('#result-incidents').textContent = result.incidents;
+    $('#result-title').textContent = result.winner_entry_id ? `${result.classification.find((item) => item.entry_id === result.winner_entry_id)?.driver_name} GANA LA ETAPA` : 'ETAPA COMPLETADA · SIN FINALISTAS';
+    $('#result-stats').innerHTML = result.classification.map((entry) => `<div class="result-driver"><strong>${escapeHtml(entry.driver_name)}</strong><span>${escapeHtml(entry.vehicle_name)}</span><b>${entry.status === 'finished' ? entry.time_display : 'ABANDONO'}</b><span>P${String(entry.position).padStart(2, '0')} · ${entry.decision_count} DECISIONES · ${entry.attacks} ATAQUES</span><span>AVANCE ${((entry.distance_m || 0) / 1000).toFixed(2)} KM · DAÑO ${Math.round(entry.damage)}% · ${entry.incidents} INCIDENTES</span></div>`).join('');
     if (race._finishShown) return;
     race._finishShown = true;
-    showToast(result.status === 'finished' ? `Etapa completada · ${result.time_display}` : 'La carrera terminó en abandono.');
+    showToast(result.winner_entry_id ? `${result.classification.find((item) => item.entry_id === result.winner_entry_id)?.driver_name} gana la etapa` : 'La carrera terminó sin un finalista.');
   }
 
   function statusLabel(status) {
@@ -205,7 +225,7 @@
   }
 
   async function poll() {
-    if (!race || race.status !== 'running' || pollInFlight) return;
+    if (!race || !['running', 'created'].includes(race.status) || pollInFlight) return;
     pollInFlight = true;
     try {
       const data = await api(`/api/races/${race.id}/tick`, 'POST');
@@ -214,15 +234,17 @@
       showToast(error.message);
     } finally {
       pollInFlight = false;
-      if (race?.status === 'running') pollTimer = setTimeout(poll, 1200);
+    if (race?.status === 'running') pollTimer = setTimeout(poll, 1200);
     }
   }
 
   async function createRace() {
     catalog ||= await api('/api/catalog');
     const data = await api('/api/races', 'POST', {
-      driver_id: $('#driver-select').value || catalog.drivers[0].id,
-      vehicle_id: $('#vehicle-select').value || catalog.vehicles[0].id,
+      participants: [
+        { driver_id: $('#driver-one-select').value || catalog.drivers[0].id, vehicle_id: $('#vehicle-one-select').value || catalog.vehicles[0].id },
+        { driver_id: $('#driver-two-select').value || catalog.drivers[1].id, vehicle_id: $('#vehicle-two-select').value || catalog.vehicles[2].id },
+      ],
       stage_id: $('#stage-select').value || catalog.stages[0].id,
     });
     render(data.race);
@@ -235,34 +257,43 @@
   async function initialize() {
     catalog = await api('/api/catalog');
     populateSelect($('#stage-select'), catalog.stages, (item) => item.name);
-    populateSelect($('#driver-select'), catalog.drivers, (item) => item.name);
-    populateSelect($('#vehicle-select'), catalog.vehicles, (item) => item.name);
+    const drivers = catalog.drivers.filter((item) => item.age_group);
+    const vehicles = catalog.vehicles.filter((item) => item.class);
+    populateSelect($('#driver-one-select'), drivers, (item) => `${item.name} · ${item.age_group}`);
+    populateSelect($('#driver-two-select'), drivers, (item) => `${item.name} · ${item.age_group}`);
+    populateSelect($('#vehicle-one-select'), vehicles, (item) => `${item.name} · ${item.class}`);
+    populateSelect($('#vehicle-two-select'), vehicles, (item) => `${item.name} · ${item.class}`);
+    if (drivers.length >= 2) $('#driver-two-select').value = drivers[1].id;
+    if (vehicles.length >= 3) $('#vehicle-two-select').value = vehicles[2].id;
     const history = await api('/api/races');
     const resumable = history.races.find((item) => ['running', 'paused'].includes(item.status));
     if (resumable) {
       const saved = await api(`/api/races/${resumable.id}`);
       render(saved.race);
-      if (saved.race.status === 'running') pollTimer = setTimeout(poll, 800);
-    } else if (history.races[0]?.status === 'created') {
-      const saved = await api(`/api/races/${history.races[0].id}`);
-      render(saved.race);
+      if (saved.race.status === 'created') {
+        const started = await api(`/api/races/${saved.race.id}/start`, 'POST');
+        render(started.race);
+      }
+      if (saved.race.status === 'running' || saved.race.status === 'created') pollTimer = setTimeout(poll, 800);
     } else if (history.races[0]?.status === 'finished' || history.races[0]?.status === 'abandoned') {
       const saved = await api(`/api/races/${history.races[0].id}`);
       render(saved.race);
     }
   }
 
-  ['stage-select', 'driver-select', 'vehicle-select'].forEach((id) => {
+  ['stage-select', 'driver-one-select', 'driver-two-select', 'vehicle-one-select', 'vehicle-two-select'].forEach((id) => {
     $(`#${id}`).addEventListener('change', async () => {
       if (!race || ['created', 'finished', 'abandoned'].includes(race.status)) {
         clearTimeout(pollTimer);
         race = null;
         $('#race-status').textContent = 'CONFIGURACIÓN ACTUALIZADA';
       } else {
-        showToast('No se puede cambiar la configuración durante una carrera activa.');
+        showToast('La competencia está activa; espera a su finalización para cambiar participantes.');
         $('#stage-select').value = race.stage.id;
-        $('#driver-select').value = race.entries[0].driver.id;
-        $('#vehicle-select').value = race.entries[0].vehicle.id;
+        $('#driver-one-select').value = race.entries[0].driver.id;
+        $('#vehicle-one-select').value = race.entries[0].vehicle.id;
+        $('#driver-two-select').value = race.entries[1].driver.id;
+        $('#vehicle-two-select').value = race.entries[1].vehicle.id;
       }
     });
   });
@@ -302,9 +333,9 @@
     try {
       const data = await api('/api/races');
       const list = $('#history-list');
-      list.innerHTML = data.races.length ? data.races.map((item) => `<button class="history-row" data-race="${escapeHtml(item.id)}"><span class="history-status ${item.status}">${escapeHtml(statusLabel(item.status))}</span><strong>${escapeHtml(item.stage_name)}</strong><span>${escapeHtml(item.driver_name)} · ${escapeHtml(item.vehicle_name)}</span><b>${formatTime(item.elapsed_seconds)}</b></button>`).join('') : '<div class="event-empty">Todavía no hay carreras guardadas en este Codespace.</div>';
+    list.innerHTML = data.races.length ? data.races.map((item) => `<button class="history-row" data-race="${escapeHtml(item.id)}"><span class="history-status ${item.status}">${escapeHtml(statusLabel(item.status))}</span><strong>${escapeHtml(item.stage_name)} · ${item.participant_count || 1} competidores</strong><span>${escapeHtml(item.driver_name)} · ${escapeHtml(item.vehicle_name)}${item.winner_name ? ` · Ganador: ${escapeHtml(item.winner_name)}` : ''}</span><b>${formatTime(item.elapsed_seconds)}</b></button>`).join('') : '<div class="event-empty">Todavía no hay carreras guardadas en este Codespace.</div>';
       list.querySelectorAll('[data-race]').forEach((button) => button.addEventListener('click', async () => {
-        try { const raceData = await api(`/api/races/${button.dataset.race}`); clearTimeout(pollTimer); render(raceData.race); if (raceData.race.status === 'running') pollTimer = setTimeout(poll, 1000); $('#history-modal').hidden = true; }
+        try { const raceData = await api(`/api/races/${button.dataset.race}`); clearTimeout(pollTimer); render(raceData.race); if (['running', 'created'].includes(raceData.race.status)) pollTimer = setTimeout(poll, 1000); $('#history-modal').hidden = true; }
         catch (error) { showToast(error.message); }
       }));
       $('#history-modal').hidden = false;

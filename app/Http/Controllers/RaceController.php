@@ -25,10 +25,15 @@ class RaceController
 
     public function create(Request $request): JsonResponse
     {
-        $values = $request->validate(['driver_id' => ['required', 'string'], 'vehicle_id' => ['required', 'string'], 'stage_id' => ['required', 'string']]);
+        $values = $request->validate([
+            'stage_id' => ['required', 'string'],
+            'participants' => ['required', 'array', 'size:2'],
+            'participants.*.driver_id' => ['required', 'string', 'distinct'],
+            'participants.*.vehicle_id' => ['required', 'string'],
+        ]);
 
         try {
-            $race = $this->simulation->create($this->store->catalog(), $values['driver_id'], $values['vehicle_id'], $values['stage_id']);
+            $race = $this->simulation->create($this->store->catalog(), $values['participants'], $values['stage_id']);
         } catch (Throwable $exception) {
             Log::error('Unable to create JEV Rally race.', ['error' => $exception->getMessage()]);
             return response()->json(['message' => $exception->getMessage()], 422);
@@ -55,8 +60,26 @@ class RaceController
 
     public function start(string $race): JsonResponse
     {
-        $updated = $this->store->updateRace($race, fn (array $data) => $this->simulation->start($data));
+        $events = [];
+        $newDecisions = [];
+        $updated = $this->store->updateRace($race, function (array $data) use (&$events, &$newDecisions): array {
+            $shouldAdvance = $data['status'] === 'created';
+            $data = $this->simulation->start($data);
+            if ($shouldAdvance) {
+                $data = $this->simulation->tick($data);
+                $events = $this->simulation->newEvents($data);
+                $newDecisions = $this->simulation->newDecisions($data);
+            }
+
+            return $data;
+        });
         abort_if($updated === null, 404, 'Carrera no encontrada.');
+        $this->store->appendEvents($race, $events);
+        foreach ($newDecisions as $decision) {
+            if ($decision['fallback_used'] ?? false) {
+                Log::warning('JEV Rally used decision fallback.', ['race_id' => $race, 'entry_id' => $decision['entry_id'] ?? null, 'error' => $decision['error'] ?? null]);
+            }
+        }
 
         return response()->json(['race' => $updated]);
     }
@@ -67,12 +90,9 @@ class RaceController
         $newDecisions = [];
         try {
             $updated = $this->store->updateRace($race, function (array $data) use (&$events, &$newDecisions): array {
-                $before = count($data['events']);
-                $decisionCount = count($data['decisions']);
                 $data = $this->simulation->tick($data);
-                $events = array_slice($data['events'], $before);
-                $newDecisions = array_slice($data['decisions'], $decisionCount);
-
+                $events = $this->simulation->newEvents($data);
+                $newDecisions = $this->simulation->newDecisions($data);
                 return $data;
             });
         } catch (Throwable $exception) {
@@ -88,7 +108,12 @@ class RaceController
         }
         foreach ($newDecisions as $decision) {
             if ($decision['fallback_used'] ?? false) {
-                Log::warning('JEV Rally used decision fallback.', ['race_id' => $race, 'error' => $decision['error'] ?? null]);
+                Log::warning('JEV Rally used decision fallback.', ['race_id' => $race, 'entry_id' => $decision['entry_id'] ?? null, 'error' => $decision['error'] ?? null]);
+            }
+        }
+        foreach ($events as $event) {
+            if ($event['type'] === 'finish') {
+                Log::info('JEV Rally competitor finished the stage.', ['race_id' => $race, 'entry_id' => $event['entry_id'] ?? null, 'position' => $event['position'] ?? null]);
             }
         }
 
@@ -100,7 +125,7 @@ class RaceController
         $data = $this->store->updateRace($race, fn (array $data) => $data);
         abort_if($data === null, 404, 'Carrera no encontrada.');
 
-        return response()->json(['state' => $data['states'][0], 'events' => $data['events'], 'decisions' => $data['decisions'], 'result' => $data['result']]);
+        return response()->json(['states' => $data['states'], 'entries' => $data['entries'], 'events' => $data['events'], 'decisions' => $data['decisions'], 'result' => $data['result']]);
     }
 
     public function decisions(string $race): JsonResponse
@@ -113,13 +138,7 @@ class RaceController
 
     public function pause(string $race): JsonResponse
     {
-        $updated = $this->store->updateRace($race, function (array $data): array {
-            if ($data['status'] === 'running') {
-                $data['status'] = 'paused';
-            }
-
-            return $data;
-        });
+        $updated = $this->store->updateRace($race, fn (array $data) => $this->simulation->pause($data));
         abort_if($updated === null, 404, 'Carrera no encontrada.');
 
         return response()->json(['race' => $updated]);
@@ -127,13 +146,7 @@ class RaceController
 
     public function resume(string $race): JsonResponse
     {
-        $updated = $this->store->updateRace($race, function (array $data): array {
-            if ($data['status'] === 'paused') {
-                $data['status'] = 'running';
-            }
-
-            return $data;
-        });
+        $updated = $this->store->updateRace($race, fn (array $data) => $this->simulation->resume($data));
         abort_if($updated === null, 404, 'Carrera no encontrada.');
 
         return response()->json(['race' => $updated]);
@@ -142,11 +155,11 @@ class RaceController
     public function restart(string $race): JsonResponse
     {
         $updated = $this->store->updateRace($race, function (array $data): array {
-            if ($data['status'] === 'running') {
+            if (! in_array($data['status'], ['finished', 'paused'], true)) {
                 abort(409, 'Pausa la carrera antes de reiniciarla.');
             }
             $catalog = $this->store->catalog();
-            $fresh = $this->simulation->create($catalog, $data['entries'][0]['driver']['id'], $data['entries'][0]['vehicle']['id'], $data['stage']['id']);
+            $fresh = $this->simulation->restart($catalog, $data);
             $fresh['id'] = $data['id'];
             $fresh['created_at'] = $data['created_at'];
 

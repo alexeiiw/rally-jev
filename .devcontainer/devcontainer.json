@@ -2,6 +2,7 @@
   "name": "JEV Rally",
   "image": "mcr.microsoft.com/devcontainers/php:8.3-bookworm",
   "postCreateCommand": "bash install.sh",
+  "postStartCommand": "bash scripts/start-server.sh",
   "forwardPorts": [8000],
   "portsAttributes": {
     "8000": { "label": "JEV Rally", "onAutoForward": "openBrowser" }

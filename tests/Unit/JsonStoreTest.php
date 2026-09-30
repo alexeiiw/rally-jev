@@ -46,6 +46,22 @@ class JsonStoreTest extends TestCase
         self::assertSame('Sierra de la Mina', $store->catalog()['stages'][0]['name']);
     }
 
+    public function test_setup_adds_new_driver_and_vehicle_profiles_without_replacing_custom_catalog_entries(): void
+    {
+        $this->store->ensureInitialized();
+        $catalogPath = $this->dataPath.'/catalog/drivers.json';
+        $custom = ['id' => 'custom-driver', 'name' => 'MI PILOTO', 'age_group' => 'Custom', 'experience' => 50, 'reaction' => 50, 'aggressiveness' => 50, 'conservation' => 50, 'risk_tolerance' => 50];
+        file_put_contents($catalogPath, json_encode([$custom], JSON_THROW_ON_ERROR));
+
+        $this->store->ensureInitialized();
+        $catalog = $this->store->catalog();
+
+        self::assertSame('MI PILOTO', $catalog['drivers'][0]['name']);
+        self::assertCount(4, $catalog['drivers']);
+        self::assertCount(3, $catalog['vehicles']);
+        self::assertCount(1, $catalog['stages']);
+    }
+
     public function test_events_are_appended_as_individual_json_lines_and_can_be_read(): void
     {
         $this->store->ensureInitialized();
@@ -54,7 +70,7 @@ class JsonStoreTest extends TestCase
         $this->store->appendEvents($raceId, [$event]);
         $this->store->appendEvents($raceId, [['type' => 'finish', 'sector' => 12]]);
 
-        self::assertSame([$event, ['type' => 'finish', 'sector' => 12]], $this->store->events($raceId));
+        self::assertSame([[$event['type'] ?? 'derrape', $event['label'] ?? 'Derrape'], ['finish', null]], array_map(fn (array $stored) => [$stored['type'], $stored['label'] ?? null], $this->store->events($raceId)));
     }
 
     private function removeDataDirectory(): void

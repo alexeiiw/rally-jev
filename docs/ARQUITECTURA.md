@@ -1,6 +1,6 @@
 # JEV Rally — arquitectura v1
 
-**Versión del proyecto: 0.1.0.** Jev real está pendiente de acceso y documentación oficial; el proveedor activo para desarrollo es `MockJevService`.
+**Versión del proyecto: 0.3.0.** Jev real está pendiente de acceso y documentación oficial; el proveedor activo para desarrollo es `MockJevService`.
 
 ## Decisiones
 
@@ -10,6 +10,7 @@
 - Sin base de datos: catálogos y carreras se guardan en `storage/app/data/` como JSON y JSONL.
 - El estado persistido del servidor es la verdad oficial; JavaScript dibuja y anima, nunca decide resultados.
 - El proveedor inicial es `MockJevService`; las acciones son discretas y el proveedor real deberá implementarse únicamente después de verificar documentación oficial vigente.
+- Cada carrera admite dos entradas con pilotos distintos y autos seleccionables de forma independiente. Cada entrada mantiene RNG, estado, decisiones, eventos, desgaste, tiempo y resultado propios; el recorrido/etapa y sus condiciones son compartidos.
 - Estado de Jev: en espera de acceso y documentación oficial para evaluar cómo interactuar con el servicio e integrar su decisión estratégica. `JevService` es solo un punto de extensión y todavía no llama a una API real.
 - Los ticks de simulación avanzan cinco segundos simulados y el navegador los solicita mediante polling.
 - La semilla, nombre/versión del generador RNG y estado del generador de cada carrera se conservan para que la variación del motor sea reproducible.
@@ -33,11 +34,11 @@ storage/app/data/races/*.events.jsonl  registro cronológico de eventos
 
 ## Flujo de una carrera
 
-1. Selección del piloto/vehículo/etapa y creación de carrera con semilla.
-2. Inicio: estado `running` y primera decisión necesaria.
-3. Un tick carga y bloquea la carrera, solicita decisión cuando toca, simula el intervalo, persiste estado y resume en el índice JSON.
-4. Las decisiones y eventos se conservan con contexto antes/después; ante fallo del proveedor se registra fallback a `MANTENER`.
-5. La carrera termina al completar la distancia o abandonar; el frontend presenta el resultado persistido.
+1. Selección de la etapa compartida, dos pilotos distintos y un vehículo para cada piloto; la carrera recibe semilla común con RNG independiente por entrada.
+2. Inicio: ambos estados pasan a `running` y cada participante obtiene decisiones usando su contexto, personalidad y auto.
+3. Cada tick procesa los estados de ambos participantes por separado. Recorrido, sectores y clima son compartidos; decisión, tiempo, distancia, RNG, desgaste, daños, eventos y terminalidad son individuales.
+4. Si un piloto llega a meta o abandona, su estado queda terminal y deja de avanzar; el rival continúa. La clasificación coloca finalistas por menor tiempo, finalistas antes que abandonos y, si ambos abandonan, compara la distancia completada.
+5. Estado, decisiones, eventos y clasificación se persisten en JSON. Un fallo del proveedor usa fallback por participante.
 
 ## Formatos
 
@@ -48,4 +49,4 @@ storage/app/data/races/*.events.jsonl  registro cronológico de eventos
 
 ## Limitaciones deliberadas v1
 
-No hay multiusuario ni sincronización entre Codespaces. JSON local sirve para instancia única y uso personal. No guardar archivos de carreras en Git. La eliminación del Codespace elimina las partidas.
+La pantalla representa ambos autos en la pista esquemática y muestra telemetría del participante activo. No hay multiusuario ni sincronización entre Codespaces. JSON local sirve para instancia única y uso personal. No guardar archivos de carreras en Git. La eliminación del Codespace elimina las partidas.
