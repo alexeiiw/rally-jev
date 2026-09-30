@@ -4,7 +4,7 @@
 
 - Solicitud vigente: implementar tres perfiles (joven/intermedio/mayor), tres clases de auto (bueno/medio/básico), selección de dos combinaciones y carrera simultánea en la misma etapa; persistir documentación y publicar a GitHub al terminar.
 - Repositorio base sincronizado con GitHub antes de comenzar: `main` en `642ae03` (`composer.lock` ya está versionado).
-- Cambios locales listos para commit/push: catálogos aditivos para tres pilotos y tres autos; request para dos pilotos distintos; motor procesa estados por participante y usa RNG por auto, personalidad y estadísticas del vehículo; UI de dos selectores, dos símbolos en mapa, clasificación e informe; persistencia registra conteo/winner; Codespaces inicia servidor en `postStartCommand`.
+- Cambios publicados en GitHub: commit `f5dbd5d` (`Add two-pilot rally competition`) en `origin/main`. Incluye catálogos aditivos para tres pilotos y tres autos; request para dos pilotos distintos; motor procesa estados por participante y usa RNG por auto, personalidad y estadísticas del vehículo; UI de dos selectores, dos símbolos en mapa, clasificación e informe; persistencia registra conteo/winner; Codespaces inicia servidor en `postStartCommand`.
 - Archivos tocados: `.devcontainer/devcontainer.json`, `scripts/start-server.sh` (nuevo), `scripts/start.sh`, `app/Services/JsonStore.php`, `app/Services/RaceSimulationService.php`, `app/Services/MockJevService.php`, `app/Http/Controllers/RaceController.php`, `resources/views/rally.blade.php`, `public/js/rally.js`, `public/css/rally-extra.css`, `tests/Unit/JsonStoreTest.php`, `tests/Unit/RaceSimulationServiceTest.php`, `README.md`, `docs/ARQUITECTURA.md`, `docs/PROGRESO.md`, `CHANGELOG.md`.
 - Meta estabilizada: `finish_time` se calcula por participante desde distancia anterior y fracción del tick; dos cruces en el mismo tick se ordenan por ese tiempo. El finalista se congela mientras el rival continúa.
 - Doble abandono: el motor ordena por distancia completada, persiste la clasificación y deja `winner_entry_id` en `null`; no se anuncia un ganador que no llegó.
@@ -13,6 +13,7 @@
 - Versión actual: **0.3.0** (competencia local robusta de dos participantes con Mock Jev). `composer.json`, interfaz, README, arquitectura y changelog están alineados.
 - Verificaciones locales hechas: `git diff --check` limpio y `bash -n install.sh scripts/start.sh scripts/start-server.sh` correcto.
 - Bloqueo conocido: este Windows no tiene PHP, Composer, Node ni `vendor/`. No se pudieron ejecutar `php artisan test`, `php artisan route:list` ni `node --check public/js/rally.js`; `install.sh` los ejecuta dentro de Codespaces.
+- Publicación completada: `f5dbd5d` fue enviado correctamente a `origin/main`. Esta actualización de la bitácora se publica como commit de documentación de cierre.
 
 ## Versión y estado del proveedor Jev
 
