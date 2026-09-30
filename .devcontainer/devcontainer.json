@@ -1,0 +1,18 @@
+{
+  "name": "JEV Rally",
+  "image": "mcr.microsoft.com/devcontainers/php:1-8.3-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/composer:2": {}
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": { "label": "JEV Rally", "onAutoForward": "openBrowser" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["bmewburn.vscode-intelephense-client", "xdebug.php-debug"]
+    }
+  }
+}
