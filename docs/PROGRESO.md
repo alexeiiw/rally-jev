@@ -14,6 +14,7 @@
 - Setup de Codespaces crea `.env`, instala dependencias e inicializa archivos únicamente si faltan.
 - Verificación pendiente: el entorno de autoría no dispone de PHP, Composer ni Node y Docker Desktop no tiene daemon activo. `.devcontainer/setup.sh` ejecutará la validación JS y las pruebas PHPUnit al crear el Codespace.
 - Codespaces inició en Recovery debido a error de contenedor; se cambió a la etiqueta de imagen PHP documentada `8.3-bookworm`, se actualizó Node Feature a v2 y setup instala Composer como fallback.
+- Se agregó `install.sh` en la raíz como comando manual único de instalación/bootstrap para Codespaces.
 
 ## Próximo ciclo sugerido
 

@@ -20,13 +20,13 @@ También puedes ejecutar `bash scripts/start.sh`.
 
 ## Instalación manual de dependencias
 
-En un Codespace normal (no Recovery), el setup de primera creación es:
+Desde la raíz del repositorio, en un Codespace normal (no Recovery), ejecuta el instalador único:
 
 ```bash
-bash .devcontainer/setup.sh
+bash install.sh
 ```
 
-Este script instala Composer si no está disponible, instala dependencias PHP, prepara `.env` sin reemplazarlo, inicializa los JSON faltantes y corre las comprobaciones.
+Este script instala Composer si no está disponible, instala dependencias PHP, prepara `.env` sin reemplazarlo, inicializa los JSON faltantes y corre las comprobaciones. Si el Codespace está en Recovery Mode, primero reconstruye el contenedor desde la paleta de comandos de VS Code: `Codespaces: Rebuild Container`.
 
 ## Desarrollo local con Docker
 
