@@ -18,11 +18,10 @@
 
 ## Próximo ciclo sugerido
 
-1. Abrir el repositorio en Codespaces y dejar ejecutar el post-create setup.
-2. Revisar dependencias/bootstrap y resolver cualquier error de instalación.
-3. Arrancar con `php artisan serve --host=0.0.0.0 --port=8000`.
-4. Probar crear, iniciar, pausar/reanudar, terminar, reiniciar y consultar historial.
-5. Añadir pruebas PHPUnit de semilla, progresión, fallback, eventos y finalización tras validar la base real.
+1. Reconstruir el Codespace desde la rama `main` actualizada; el post-create ejecutará `bash install.sh`.
+2. Arrancar con `php artisan serve --host=0.0.0.0 --port=8000`.
+3. Probar crear, iniciar, pausar/reanudar, terminar, reiniciar y consultar historial.
+4. Añadir pruebas PHPUnit de semilla, progresión, fallback, eventos y finalización tras validar la base real.
 
 ## Regla de continuación
 
