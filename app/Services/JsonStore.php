@@ -218,7 +218,7 @@ class JsonStore
         if ($classification === []) {
             foreach ($race['entries'] ?? [] as $entryIndex => $raceEntry) {
                 $raceState = $race['states'][$entryIndex] ?? [];
-                $classification[] = ['entry_id' => $raceEntry['id'], 'driver_name' => $raceEntry['driver']['name'], 'vehicle_name' => $raceEntry['vehicle']['name'], 'status' => $raceState['status'] ?? 'running', 'position' => $raceEntry['position'] ?? $entryIndex + 1, 'elapsed_seconds' => $raceState['elapsed_seconds'] ?? 0, 'time_display' => $raceState['time_display'] ?? '00:00.00', 'damage' => $raceState['damage'] ?? 0, 'decision_count' => 0, 'attacks' => 0, 'incidents' => 0];
+                $classification[] = ['entry_id' => $raceEntry['id'] ?? null, 'driver_name' => $raceEntry['driver']['name'] ?? 'Piloto', 'vehicle_name' => $raceEntry['vehicle']['name'] ?? 'Vehículo', 'status' => $raceState['status'] ?? 'running', 'position' => $raceEntry['position'] ?? $entryIndex + 1, 'elapsed_seconds' => $raceState['elapsed_seconds'] ?? 0, 'time_display' => $raceState['time_display'] ?? '00:00.00', 'damage' => $raceState['damage'] ?? 0, 'decision_count' => 0, 'attacks' => 0, 'incidents' => 0];
             }
         }
         $winnerName = null;

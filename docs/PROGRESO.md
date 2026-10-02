@@ -10,7 +10,7 @@
 - Doble abandono: el motor ordena por distancia completada, persiste la clasificación y deja `winner_entry_id` en `null`; no se anuncia un ganador que no llegó.
 - El endpoint `start` avanza únicamente una carrera `created`; repetir la solicitud sobre una carrera activa ya no añade ticks.
 - Pruebas añadidas: llegada simultánea ordenada por tiempo, finalista inmóvil mientras continúa el rival y doble abandono obtenido desde el motor.
-- Versión actual: **0.3.0** (competencia local robusta de dos participantes con Mock Jev). `composer.json`, interfaz, README, arquitectura y changelog están alineados.
+- Versión actual: **0.3.1** (suite de pruebas unitarias y simulación estabilizadas). `composer.json`, interfaz, README, arquitectura y changelog están alineados.
 - Verificaciones locales hechas: `git diff --check` limpio y `bash -n install.sh scripts/start.sh scripts/start-server.sh` correcto.
 - Bloqueo conocido: este Windows no tiene PHP, Composer, Node ni `vendor/`. No se pudieron ejecutar `php artisan test`, `php artisan route:list` ni `node --check public/js/rally.js`; `install.sh` los ejecuta dentro de Codespaces.
 - Publicación completada: `f5dbd5d` fue enviado correctamente a `origin/main`. Esta actualización de la bitácora se publica como commit de documentación de cierre.

@@ -113,6 +113,7 @@ class RaceSimulationServiceTest extends \Tests\TestCase
         $race['states'][0]['status'] = $race['states'][1]['status'] = 'running';
         $race['states'][0]['current_action'] = $race['states'][1]['current_action'] = 'MANTENER';
         $race['states'][0]['needs_decision'] = $race['states'][1]['needs_decision'] = false;
+        $race['states'][0]['speed_kmh'] = $race['states'][1]['speed_kmh'] = 80;
         $race['tick'] = 3;
 
         $race = $simulation->tick($race);

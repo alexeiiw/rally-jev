@@ -1,5 +1,12 @@
 # Registro de cambios
 
+## [0.3.1] — Suite de pruebas y simulación estabilizadas
+
+- Corrección del bootstrap del Kernel en `TestCase.php` para la inicialización correcta de Facades en PHPUnit.
+- Manejo defensivo en `JsonStore.php` de la clave de array `id` al construir resúmenes de carreras.
+- Sincronización del estado de `tick` en `RaceSimulationService.php` previo a las llamadas de decisión.
+- Ajuste del estado inicial de velocidad en las pruebas unitarias de cálculo de rendimiento vehicular.
+
 ## [0.3.0] — Clasificación de competencia estabilizada
 
 - El instante de cruce de meta se calcula por participante dentro del tick para ordenar correctamente llegadas simultáneas.

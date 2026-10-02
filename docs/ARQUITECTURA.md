@@ -1,6 +1,6 @@
 # JEV Rally — arquitectura v1
 
-**Versión del proyecto: 0.3.0.** Jev real está pendiente de acceso y documentación oficial; el proveedor activo para desarrollo es `MockJevService`.
+**Versión del proyecto: 0.3.1.** Jev real está pendiente de acceso y documentación oficial; el proveedor activo para desarrollo es `MockJevService`.
 
 ## Decisiones
 
