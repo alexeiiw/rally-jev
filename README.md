@@ -1,6 +1,6 @@
 # JEV Rally
 
-**Versión actual: 0.3.0 — competencia local robusta de dos participantes con Mock Jev.**
+**Versión actual: 0.3.1 — competencia local robusta de dos participantes con Mock Jev y suite de pruebas estabilizada.**
 
 Juego web de rally con decisiones estratégicas, simulación del lado servidor y persistencia JSON local. La edición inicial usa Mock Jev y no requiere base de datos.
 

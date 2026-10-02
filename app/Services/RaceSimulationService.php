@@ -159,6 +159,7 @@ class RaceSimulationService
     private function tickEntry(array &$race, int $entryIndex): void
     {
         $state = &$race['states'][$entryIndex];
+        $state['tick'] = $race['tick'];
         $entry = $race['entries'][$entryIndex];
         $localRace = $race;
         $localRace['states'] = [$state];
@@ -167,8 +168,6 @@ class RaceSimulationService
         $localRace['decisions'] = array_values(array_filter($race['decisions'], fn (array $decision) => $decision['entry_id'] === $entry['id']));
         $localRace['events'] = array_values(array_filter($race['events'], fn (array $event) => ($event['entry_id'] ?? null) === $entry['id']));
         $events = [];
-
-        $state['tick'] = $race['tick'];
         $elapsedBeforeTick = $state['elapsed_seconds'];
         $state['elapsed_seconds'] = round($state['elapsed_seconds'] + self::TICK_SECONDS, 2);
         $state['time_lost_this_tick'] = 0;
