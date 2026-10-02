@@ -15,7 +15,7 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <a class="brand" href="/"><span class="brand-mark">J</span><span>JEV<span class="brand-light">RALLY</span> <small class="version-tag">V0.3.0 · MOCK</small></span></a>
+      <a class="brand" href="/"><span class="brand-mark">J</span><span>JEV<span class="brand-light">RALLY</span> <small class="version-tag">V0.3.2 · MOCK</small></span></a>
       <div class="topbar-center"><span class="live-dot"></span><span>RACE CONTROL</span><span class="top-separator">/</span><span id="session-label">SESIÓN DE PRUEBA</span></div>
       <div class="topbar-right"><span class="environment"><i></i> MOCK JEV · 2 PILOTOS</span><button class="icon-button" id="history-button" title="Historial de carreras">◷</button></div>
     </header>

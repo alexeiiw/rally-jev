@@ -1,5 +1,13 @@
 # Registro de cambios
 
+## [0.3.2] — Persistencia JSON sin bloqueos recursivos
+
+- Corregido el bloqueo recursivo de `index.lock`: `ensureInitialized()` ya no se ejecuta dentro de un lock de carrera/índice, por lo que crear, iniciar y avanzar carreras deja de fallar con `Could not acquire history index lock`.
+- Cada operación inicializa catálogos y directorios antes de tomar locks, manteniendo un orden consistente `index → race` entre peticiones concurrentes.
+- El frontend ya no oculta errores: si la respuesta no es JSON o llega vacía, muestra el código HTTP real en lugar de `Unexpected end of JSON input`.
+- Las carreras en estado `created` se recuperan al recargar la página, evitando dejarlas huérfanas.
+- Nueva prueba de regresión en `JsonStoreTest` que cubre create → update → read → events sin deadlock.
+
 ## [0.3.1] — Suite de pruebas y simulación estabilizadas
 
 - Corrección del bootstrap del Kernel en `TestCase.php` para la inicialización correcta de Facades en PHPUnit.

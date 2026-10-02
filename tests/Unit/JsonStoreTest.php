@@ -73,6 +73,40 @@ class JsonStoreTest extends TestCase
         self::assertSame([[$event['type'] ?? 'derrape', $event['label'] ?? 'Derrape'], ['finish', null]], array_map(fn (array $stored) => [$stored['type'], $stored['label'] ?? null], $this->store->events($raceId)));
     }
 
+    public function test_create_update_and_read_race_do_not_deadlock_on_json_locks(): void
+    {
+        $store = $this->store;
+        $race = [
+            'id' => (string) Str::uuid(),
+            'status' => 'created',
+            'stage' => ['id' => 'test-stage', 'name' => 'Test Stage'],
+            'entries' => [
+                ['id' => 'entry-1', 'driver' => ['name' => 'PILOTO A'], 'vehicle' => ['name' => 'AUTO A'], 'position' => 1],
+                ['id' => 'entry-2', 'driver' => ['name' => 'PILOTO B'], 'vehicle' => ['name' => 'AUTO B'], 'position' => 2],
+            ],
+            'states' => [
+                ['status' => 'created', 'elapsed_seconds' => 0, 'damage' => 0, 'time_display' => '00:00.00'],
+                ['status' => 'created', 'elapsed_seconds' => 0, 'damage' => 0, 'time_display' => '00:00.00'],
+            ],
+            'result' => null,
+            'created_at' => now()->toISOString(),
+            'updated_at' => now()->toISOString(),
+        ];
+
+        $store->createRace($race);
+        $updated = $store->updateRace($race['id'], function (array $data): array {
+            $data['status'] = 'running';
+
+            return $data;
+        });
+        $store->appendEvents($race['id'], [['type' => 'finish', 'label' => 'Etapa completada']]);
+
+        self::assertSame('running', $updated['status']);
+        self::assertSame('running', $store->race($race['id'])['status']);
+        self::assertCount(1, $store->events($race['id']));
+        self::assertSame($race['id'], $store->history()[0]['id']);
+    }
+
     private function removeDataDirectory(): void
     {
         if (! is_dir($this->dataPath)) {

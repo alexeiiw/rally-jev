@@ -6,8 +6,13 @@
       headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').content },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || 'No se pudo completar la solicitud.');
+    const raw = await response.text();
+    let data = null;
+    if (raw) {
+      try { data = JSON.parse(raw); } catch { data = null; }
+    }
+    if (!response.ok) throw new Error(data?.message || `No se pudo completar la solicitud (HTTP ${response.status}).`);
+    if (data === null) throw new Error('El servidor devolvió una respuesta vacía.');
     return data;
   };
 
@@ -266,7 +271,7 @@
     if (drivers.length >= 2) $('#driver-two-select').value = drivers[1].id;
     if (vehicles.length >= 3) $('#vehicle-two-select').value = vehicles[2].id;
     const history = await api('/api/races');
-    const resumable = history.races.find((item) => ['running', 'paused'].includes(item.status));
+    const resumable = history.races.find((item) => ['running', 'paused', 'created'].includes(item.status));
     if (resumable) {
       const saved = await api(`/api/races/${resumable.id}`);
       render(saved.race);

@@ -7,7 +7,6 @@ use RuntimeException;
 class JsonStore
 {
     private string $root;
-    private bool $initializeOnLock = true;
 
     public function __construct()
     {
@@ -18,7 +17,6 @@ class JsonStore
     {
         $store = new self();
         $store->root = $path;
-        $store->initializeOnLock = false;
 
         return $store;
     }
@@ -91,6 +89,7 @@ class JsonStore
         if (! $this->validRaceId($id)) {
             return null;
         }
+        $this->ensureInitialized();
 
         return $this->withRaceAndIndexLocks($id, function () use ($id): ?array {
             $path = $this->racePath($id);
@@ -104,6 +103,8 @@ class JsonStore
         if (! $this->validRaceId($id)) {
             return null;
         }
+        $this->ensureInitialized();
+
         return $this->withRaceAndIndexLocks($id, function () use ($id, $callback): ?array {
             $path = $this->racePath($id);
             if (! is_file($path)) return null;
@@ -142,6 +143,7 @@ class JsonStore
         if (! $this->validRaceId($raceId)) {
             throw new RuntimeException('Invalid race identifier.');
         }
+        $this->ensureInitialized();
 
         $this->withRaceAndIndexLocks($raceId, function () use ($raceId, $events): void {
             $path = $this->eventPath($raceId);
@@ -170,6 +172,8 @@ class JsonStore
         if (! $this->validRaceId($raceId)) {
             throw new RuntimeException('Invalid race identifier.');
         }
+        $this->ensureInitialized();
+
         $this->withRaceAndIndexLocks($raceId, function () use ($raceId): void {
             $path = $this->eventPath($raceId);
             $handle = fopen($path, 'c+');
@@ -194,6 +198,8 @@ class JsonStore
         if (! $this->validRaceId($raceId)) {
             return [];
         }
+        $this->ensureInitialized();
+
         return $this->withRaceAndIndexLocks($raceId, function () use ($raceId): array {
             $path = $this->eventPath($raceId);
             if (! is_file($path)) {
@@ -292,9 +298,6 @@ class JsonStore
 
     private function withLock(string $key, callable $callback): mixed
     {
-        if ($this->initializeOnLock && $key !== 'setup') {
-            $this->ensureInitialized();
-        }
         $directory = $this->root.'/locks';
         if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
             throw new RuntimeException('Could not create JSON lock directory.');

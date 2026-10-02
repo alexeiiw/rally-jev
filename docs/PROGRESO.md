@@ -1,5 +1,15 @@
 # Continuidad del desarrollo
 
+## Sesión de corrección de persistencia — v0.3.2
+
+- Síntoma reportado: la interfaz cargaba catálogo y pilotos, pero al iniciar la carrera aparecía `Unexpected end of JSON input` y todo quedaba en `LISTO`.
+- Diagnóstico: `storage/logs/laravel.log` confirmó `Could not acquire history index lock` en `JsonStore.php`. La causa era un bloqueo recursivo: `withRaceAndIndexLocks()` tomaba `index.lock`, luego `withLock()` llamaba a `ensureInitialized()`, que intentaba volver a tomar `index.lock` (flock no es reentrante en el mismo proceso).
+- Corrección aplicada en `app/Services/JsonStore.php`: se eliminó la auto-inicialización dentro de `withLock()`; cada método público (`race`, `updateRace`, `appendEvents`, `clearEvents`, `events`, `catalog`, `createRace`, `history`) inicializa directorios/catálogos antes de tomar locks. Orden consistente `index → race` en todas las rutas.
+- Corrección en `public/js/rally.js`: `api()` lee el cuerpo con `response.text()`, intenta `JSON.parse` de forma segura y reporta el código HTTP real si la respuesta no es JSON o llega vacía. También se incluyó `created` entre los estados recuperables al recargar.
+- Prueba de regresión añadida en `tests/Unit/JsonStoreTest.php`: create → update → read → events sin deadlock.
+- Versión actual: **0.3.2**.
+- Bloqueo conocido: este Windows no tiene PHP/Composer/Node; la verificación de PHPUnit debe ejecutarse en Codespaces con `vendor/bin/phpunit` (el comando `php artisan test` no está disponible en esta instalación).
+
 ## Sesión de competencia de dos pilotos — cierre v0.3.0
 
 - Solicitud vigente: implementar tres perfiles (joven/intermedio/mayor), tres clases de auto (bueno/medio/básico), selección de dos combinaciones y carrera simultánea en la misma etapa; persistir documentación y publicar a GitHub al terminar.
@@ -10,14 +20,14 @@
 - Doble abandono: el motor ordena por distancia completada, persiste la clasificación y deja `winner_entry_id` en `null`; no se anuncia un ganador que no llegó.
 - El endpoint `start` avanza únicamente una carrera `created`; repetir la solicitud sobre una carrera activa ya no añade ticks.
 - Pruebas añadidas: llegada simultánea ordenada por tiempo, finalista inmóvil mientras continúa el rival y doble abandono obtenido desde el motor.
-- Versión actual: **0.3.1** (suite de pruebas unitarias y simulación estabilizadas). `composer.json`, interfaz, README, arquitectura y changelog están alineados.
+- Versión actual: **0.3.2** (persistencia JSON sin bloqueos recursivos). `composer.json`, interfaz, README, arquitectura y changelog están alineados.
 - Verificaciones locales hechas: `git diff --check` limpio y `bash -n install.sh scripts/start.sh scripts/start-server.sh` correcto.
 - Bloqueo conocido: este Windows no tiene PHP, Composer, Node ni `vendor/`. No se pudieron ejecutar `php artisan test`, `php artisan route:list` ni `node --check public/js/rally.js`; `install.sh` los ejecuta dentro de Codespaces.
 - Publicación completada: `f5dbd5d` fue enviado correctamente a `origin/main`. Esta actualización de la bitácora se publica como commit de documentación de cierre.
 
 ## Versión y estado del proveedor Jev
 
-- Versión actual documentada: **0.3.0** (competencia local robusta de dos participantes con Mock Jev).
+- Versión actual documentada: **0.3.2** (competencia local robusta de dos participantes con Mock Jev y persistencia sin bloqueos).
 - Jev externo: **pendiente**. Estamos a la espera de acceso y documentación oficial vigente para analizar cómo funciona e implementar la integración.
 - Mientras tanto se usa `MockJevService`, un conjunto de reglas internas para probar decisiones y consecuencias; no es el servicio Jev real.
 - Siguiente paso Jev cuando tengamos acceso: verificar documentación/capacidades y autenticación, acordar el contrato de entrada/salida, implementar el adaptador y probar errores/fallback sin exponer secretos.
